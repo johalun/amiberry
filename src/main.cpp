@@ -559,6 +559,9 @@ void fixup_prefs(struct uae_prefs* p, bool userconfig)
 #if !defined (UAESERIAL)
 	p->uaeserial = false;
 #endif
+#if !defined (UAEGPIO)
+	p->uaegpio = false;
+#endif
 #if defined (CPUEMU_13)
 	if (p->cpu_memory_cycle_exact) {
 		if (p->gfx_framerate > 1) {

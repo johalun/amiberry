@@ -45,6 +45,7 @@
 #include "cdtv.h"
 #include "bsdsocket.h"
 #include "uaeresource.h"
+#include "uaegpio.h"
 #include "inputdevice.h"
 #include "clipboard.h"
 #include "consolehook.h"
@@ -7251,6 +7252,9 @@ static uae_u32 REGPARAM2 filesys_diagentry (TrapContext *ctx)
 #endif
 #ifdef UAESERIAL
 	resaddr = uaeserialdev_startup(ctx, resaddr);
+#endif
+#ifdef UAEGPIO
+	resaddr = uaegpiodev_startup(ctx, resaddr);
 #endif
 #ifdef WITH_TABLETLIBRARY
 	resaddr = tabletlib_startup(ctx, resaddr);

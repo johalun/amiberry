@@ -689,6 +689,7 @@ struct uae_prefs
 	int scsi;
 	bool sana2;
 	bool uaeserial;
+	bool uaegpio;
 	int catweasel;
 	int cpu_idle;
 	int ppc_cpu_idle;

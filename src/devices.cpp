@@ -38,6 +38,9 @@
 #ifdef JIT
 #include "jit/compemu.h"
 #endif
+#ifdef UAEGPIO
+#include "uaegpio.h"
+#endif
 
 #define MAX_DEVICE_ITEMS 64
 
@@ -195,6 +198,10 @@ void devices_reset(int hardreset)
 	uaeserialdev_reset();
 	uaeserialdev_start_threads();
 #endif
+#ifdef UAEGPIO
+	uaegpiodev_reset();
+	uaegpiodev_start_threads();
+#endif
 #if defined (PARALLEL_PORT)
 	initparallel();
 #endif
@@ -341,6 +348,9 @@ void virtualdevice_init (void)
 #endif
 #ifdef UAESERIAL
 	uaeserialdev_install ();
+#endif
+#ifdef UAEGPIO
+	uaegpiodev_install ();
 #endif
 #ifdef AUTOCONFIG
 	expansion_init ();
