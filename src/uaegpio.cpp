@@ -97,9 +97,11 @@ struct devstruct {
 	smp_comm_pipe requests;
 	int thread_running;
 	uae_sem_t sync_sem;
-
-	struct gpiod_chip *chip;
 	
+	uae_sem_t gpio_sem;
+	struct gpiod_chip *chip;
+	int eventfd;
+
 	void *sysdata;
 };
 
@@ -143,6 +145,7 @@ static int start_thread (struct devstruct *dev)
 	init_comm_pipe (&dev->requests, 100, 1);
 	uae_sem_init (&dev->sync_sem, 0, 0);
 	uae_start_thread (_T("uaegpio"), dev_thread, dev, NULL);
+	uae_start_thread (_T("uaegpio_gpio"), gpio_thread, dev, NULL);
 	uae_sem_wait (&dev->sync_sem);
 	printf("uaegpio: start_thread. open %d, unit %d - done\n", dev->open, dev->unit);
 	return dev->thread_running;
@@ -213,7 +216,7 @@ static uae_u32 REGPARAM2 dev_open (TrapContext *ctx)
 
 	dev->chip = gpiod_chip_open_by_name(chipname);
 	if (!dev->chip) {
-		return openfail(ctx, ioreq, IOERR_OPENFAIL);		
+		return openfail(ctx, ioreq, IOERR_OPENFAIL);
 	}
 	dev->unit = unit;
 	dev->open = 1;
@@ -350,7 +353,7 @@ static int dev_do_io(TrapContext *ctx, struct devstruct *dev, uae_u8 *request, u
 	uae_u16 io_status;
 	int async = 0;
 	struct gpiod_line *line;
- 
+
     printf("uaegpio: dev_do_io: length %d\n", io_length);
 
 	if (!dev)
@@ -390,8 +393,8 @@ static int dev_do_io(TrapContext *ctx, struct devstruct *dev, uae_u8 *request, u
 		// 	printf("ERROR gpiod_line_request_falling_edge_events\n");
 		// 	exit(1);
 		// }
-		
-		
+
+
 		async = 1;
 		break;
 	}
@@ -522,50 +525,6 @@ end:
 	return err;
 }
 
-static int dev_thread (void *devs)
-{
-    printf("uaegpio: dev_thread\n");
-
-	struct devstruct *dev = (struct devstruct*)devs;
-
-	uae_set_thread_priority (NULL, 1);
-	dev->thread_running = 1;
-    printf("uaegpio: dev_thread: signal start_thread that we are live\n");
-	uae_sem_post (&dev->sync_sem);
-    printf("uaegpio: dev_thread: signal start_thread that we are live - done\n");
-	for (;;) {
-		printf("dev_thread: --- loop begin ---\n");		
-		TrapContext *ctx = (TrapContext*)read_comm_pipe_pvoid_blocking(&dev->requests);
-		uae_u8 *iobuf = (uae_u8*)read_comm_pipe_pvoid_blocking(&dev->requests);
-		uaecptr request = (uaecptr)read_comm_pipe_u32_blocking (&dev->requests);
-		printf("dev_thread: received request, now wait on change_sem (lock?)\n");
-		uae_sem_wait (&change_sem);
-		printf("dev_thread: waited on change_sem\n");
-		if (!request) {
-			printf("dev_thread: Got NULL for request, terminate thread\n");
-			dev->thread_running = 0;
-			uae_sem_post (&dev->sync_sem);
-			uae_sem_post (&change_sem);
-			return 0;
-		} else if (get_async_request (dev, request, 1)) {
-			printf("dev_thread: get async request done (request was ready), do repy msg\n");
-			uae_ReplyMsg (request);
-			release_async_request (dev, request);
-		} else if (dev_do_io(ctx, dev, iobuf, request, 0) == 0) {
-			printf("dev_thread: dev_do_io done, do reply msg\n");
-			uae_ReplyMsg (request);
-		} else {
-			printf("uaegpio: dev_thread: dev_do_io did not finish. Add async request (dev_do_io returned 1)\n");
-			add_async_request (dev, iobuf, request);
-			// uaeser_trigger (dev->sysdata);
-		}
-		trap_background_set_complete(ctx);
-		uae_sem_post (&change_sem);
-		printf("dev_thread: --- loop end ---\n");		
-	}
-	return 0;
-}
-
 static uae_u32 REGPARAM2 dev_init (TrapContext *context)
 {
     printf("uaegpio: dev_init\n");
@@ -607,6 +566,53 @@ static void dev_reset (void)
 		}
 		memset (dev, 0, sizeof (struct devstruct));
 	}
+}
+
+static int dev_thread (void *devs)
+{
+    printf("uaegpio: dev_thread\n");
+
+	struct devstruct *dev = (struct devstruct*)devs;
+
+	uae_set_thread_priority (NULL, 1);
+	dev->thread_running = 1;
+    printf("uaegpio: dev_thread: signal start_thread that we are live\n");
+	uae_sem_post (&dev->sync_sem);
+    printf("uaegpio: dev_thread: signal start_thread that we are live - done\n");
+	for (;;) {
+		printf("uaegpio: dev_thread: --- loop begin ---\n");
+		TrapContext *ctx = (TrapContext*)read_comm_pipe_pvoid_blocking(&dev->requests);
+		uae_u8 *iobuf = (uae_u8*)read_comm_pipe_pvoid_blocking(&dev->requests);
+		uaecptr request = (uaecptr)read_comm_pipe_u32_blocking (&dev->requests);
+		printf("uaegpio: dev_thread: received request, now wait on change_sem (lock?)\n");
+		uae_sem_wait (&change_sem);
+		printf("uaegpio: dev_thread: waited on change_sem\n");
+		if (!request) {
+			printf("uaegpio: dev_thread: Got NULL for request, terminate thread\n");
+			dev->thread_running = 0;
+			uae_sem_post (&dev->sync_sem);
+			uae_sem_post (&change_sem);
+			return 0;
+		} else if (get_async_request (dev, request, 1)) {
+			printf("uaegpio: dev_thread: get async request done (request was ready), do reply msg\n");
+			uae_ReplyMsg (request);
+			release_async_request (dev, request);
+		} else if (dev_do_io(ctx, dev, iobuf, request, 0) == 0) {
+			printf("uaegpio: dev_thread: dev_do_io done, do reply msg\n");
+			uae_ReplyMsg (request);
+		} else {
+			printf("uaegpio: dev_thread: dev_do_io did not finish. Add async request (dev_do_io returned 1)\n");
+			add_async_request (dev, iobuf, request);
+			// uaeser_trigger (dev->sysdata);
+
+            // Send message to libgpiod thread?
+
+		}
+		trap_background_set_complete(ctx);
+		uae_sem_post (&change_sem);
+		printf("uaegpio: dev_thread: --- loop end ---\n");
+	}
+	return 0;
 }
 
 static uaecptr ROM_uaegpiodev_resname = 0,
