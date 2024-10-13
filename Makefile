@@ -217,6 +217,14 @@ CPPFLAGS += $(SDL_CFLAGS) -Iexternal/libguisan/include
 LDFLAGS += $(SDL_LDFLAGS) -lSDL2_image -lSDL2_ttf -lguisan -Lexternal/libguisan/lib
 
 #
+# GPIO options
+#
+ifeq ($(GPIO),1)
+    CPPFLAGS += -DUAEGPIO
+	LDFLAGS += -lgpiod    
+endif
+
+#
 # Common options
 #
 DEFS = $(XML_CFLAGS) -DAMIBERRY
@@ -334,7 +342,6 @@ OBJS =	\
 	src/tabletlibrary.o \
 	src/traps.o \
 	src/uaeexe.o \
-	src/uaegpio.o \
 	src/uaelib.o \
 	src/uaeresource.o \
 	src/zfile.o \
@@ -428,6 +435,10 @@ OBJS =	\
 	src/osdep/gui/PanelSavestate.o \
 	src/osdep/gui/main_window.o \
 	src/osdep/gui/Navigation.o
+
+ifeq ($(GPIO),1)
+	OBJS += src/uaegpio.o
+endif
 
 ifeq ($(ANDROID), 1)
 OBJS += src/osdep/gui/androidsdl_event.o \
