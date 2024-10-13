@@ -85,6 +85,10 @@ static void state_incompatible_warn(void)
 	if (currprefs.uaeserial)
 		dowarn = 1;
 #endif
+#ifdef UAEGPIO
+	if (currprefs.uaegpio)
+		dowarn = 1;
+#endif
 #ifdef SCSIEMU
 	if (currprefs.scsi)
 		dowarn = 1;

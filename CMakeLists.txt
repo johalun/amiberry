@@ -99,6 +99,7 @@ set(SRC_FILES
         src/scsi.cpp
         src/statusline.cpp
         src/traps.cpp
+        src/uaegpio.cpp
         src/uaelib.cpp
         src/uaeresource.cpp
         src/zfile.cpp

@@ -26,6 +26,7 @@
 #include "bsdsocket.h"
 #include "clipboard.h"
 #include "uaeresource.h"
+#include "uaegpio.h"
 #include "native2amiga.h"
 #include "gensound.h"
 #include "gui.h"
@@ -195,6 +196,10 @@ void devices_reset(int hardreset)
 	uaeserialdev_reset();
 	uaeserialdev_start_threads();
 #endif
+#ifdef UAEGPIO
+	uaegpiodev_reset();
+	uaegpiodev_start_threads();
+#endif
 #if defined (PARALLEL_PORT)
 	initparallel();
 #endif
@@ -341,6 +346,9 @@ void virtualdevice_init (void)
 #endif
 #ifdef UAESERIAL
 	uaeserialdev_install ();
+#endif
+#ifdef UAEGPIO
+	uaegpiodev_install ();
 #endif
 #ifdef AUTOCONFIG
 	expansion_init ();

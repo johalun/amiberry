@@ -38,6 +38,7 @@
 /* #define SERIAL_ENET */ /* serial port UDP transport */
 #define SCSIEMU /* uaescsi.device emulation */
 /* #define UAESERIAL */ /* uaeserial.device emulation */
+#define UAEGPIO /* uaegpio.device emulation */
 #define FPUEMU /* FPU emulation */
 /* #define FPU_UAE */
 /* #define WITH_SOFTFLOAT */

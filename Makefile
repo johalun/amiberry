@@ -334,6 +334,7 @@ OBJS =	\
 	src/tabletlibrary.o \
 	src/traps.o \
 	src/uaeexe.o \
+	src/uaegpio.o \
 	src/uaelib.o \
 	src/uaeresource.o \
 	src/zfile.o \

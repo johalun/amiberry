@@ -1750,6 +1750,8 @@ static uaecptr check_boot_rom(struct uae_prefs* p, int* boot_rom_type)
 		return b;
 	if (p->uaeserial)
 		return b;
+	if (p->uaegpio)
+		return b;
 	if (p->scsi == 1)
 		return b;
 	if (p->sana2)

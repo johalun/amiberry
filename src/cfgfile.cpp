@@ -2646,6 +2646,7 @@ void cfgfile_save_options(struct zfile* f, struct uae_prefs* p, int type)
 	cfgfile_dwrite(f, _T("serial_stopbits"), _T("%d"), p->serial_stopbits);
 	cfgfile_dwrite_str(f, _T("serial_translate"), serialcrlf[p->serial_crlf]);
 	cfgfile_write_bool(f, _T("uaeserial"), p->uaeserial);
+	cfgfile_write_bool(f, _T("uaegpio"), p->uaegpio);
 	cfgfile_write_bool(f, _T("sana2"), p->sana2);
 	cfgfile_write_bool(f, _T("bsdsocket_emu"), p->socket_emu);
 	cfgfile_write_bool(f, _T("synchronize_clock"), p->tod_hack);
@@ -5538,7 +5539,8 @@ static int cfgfile_parse_hardware(struct uae_prefs* p, const TCHAR* option, TCHA
 		|| cfgfile_yesno(option, value, _T("harddrive_write_protect"), &p->harddrive_read_only)
 		|| cfgfile_yesno(option, value, _T("uae_hide_autoconfig"), &p->uae_hide_autoconfig)
 		|| cfgfile_yesno(option, value, _T("board_custom_order"), &p->autoconfig_custom_sort)
-		|| cfgfile_yesno(option, value, _T("uaeserial"), &p->uaeserial))
+		|| cfgfile_yesno(option, value, _T("uaeserial"), &p->uaeserial)
+		|| cfgfile_yesno(option, value, _T("uaegpio"), &p->uaegpio))
 		return 1;
 
 	if (cfgfile_intval(option, value, _T("cachesize"), &p->cachesize, 1)
@@ -7773,6 +7775,7 @@ void default_prefs(struct uae_prefs* p, bool reset, int type)
 	p->keyboard_leds[0] = p->keyboard_leds[1] = p->keyboard_leds[2] = 0;
 	p->scsi = 0;
 	p->uaeserial = 0;
+	p->uaegpio = 0;
 	p->cpu_idle = 0;
 	p->turbo_emulation = 0;
 	p->turbo_emulation_limit = 0;
@@ -8039,6 +8042,7 @@ static void buildin_default_prefs(struct uae_prefs* p)
 		p->produce_sound = 1;
 	p->scsi = 0;
 	p->uaeserial = 0;
+	p->uaegpio = 0;
 	p->cpu_idle = 0;
 	p->turbo_emulation = 0;
 	p->turbo_emulation_limit = 0;
@@ -8613,6 +8617,7 @@ static int bip_super (struct uae_prefs *p, int config, int compa, int romcheck)
 	p->cpu_idle = 150;
 	p->scsi = 1;
 	p->uaeserial = 1;
+	p->uaegpio = 1;
 	p->socket_emu = 1;
 	p->cart_internal = 0;
 	p->picasso96_nocustom = 1;
